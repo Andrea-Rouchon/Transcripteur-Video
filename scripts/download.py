@@ -5,11 +5,10 @@ Usage: python download.py <url> <output_path>
 Outputs the final audio file path to stdout on success.
 Exits with code 1 on error.
 """
-import sys
-import os
-import subprocess
-import json
 
+import json
+import subprocess
+import sys
 
 ALLOWED_DOMAINS = (
     "youtube.com",
@@ -24,6 +23,7 @@ MAX_DURATION_SECONDS = 7200  # 2 hours
 
 def validate_url(url: str) -> bool:
     from urllib.parse import urlparse
+
     try:
         parsed = urlparse(url)
         if parsed.scheme not in ("http", "https"):
@@ -54,10 +54,13 @@ def download_audio(url: str, output_path: str) -> str:
         [
             "yt-dlp",
             "--no-playlist",
-            "-x",                         # extract audio
-            "--audio-format", "mp3",
-            "--audio-quality", "0",
-            "-o", output_path,
+            "-x",  # extract audio
+            "--audio-format",
+            "mp3",
+            "--audio-quality",
+            "0",
+            "-o",
+            output_path,
             url,
         ],
         capture_output=True,
@@ -79,27 +82,27 @@ def main():
 
     if not validate_url(url):
         print(f"ERROR: URL not allowed: {url}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(2)  # exit 2 = URL not allowed
 
     try:
         duration = check_duration(url)
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(4)  # exit 4 = metadata/network error
 
     if duration > MAX_DURATION_SECONDS:
         print(
-            f"ERROR: Video duration {duration}s exceeds limit of {MAX_DURATION_SECONDS}s",
+            f"ERROR: La vidéo dépasse la durée maximale autorisée ({MAX_DURATION_SECONDS // 3600}h).",
             file=sys.stderr,
         )
-        sys.exit(1)
+        sys.exit(3)  # exit 3 = duration exceeded
 
     try:
         final_path = download_audio(url, output_path)
         print(final_path)
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(5)  # exit 5 = download error
 
 
 if __name__ == "__main__":
