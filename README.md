@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Transcripteur Vidéo
 
-## Getting Started
+Application Next.js qui transcrit automatiquement des vidéos YouTube ou Vimeo
+en texte horodaté, en utilisant [OpenAI Whisper](https://github.com/openai/whisper)
+localement (aucun envoi à un service tiers).
 
-First, run the development server:
+## Prérequis
+
+- **Node.js** ≥ 20 (testé avec 24.10)
+- **Python 3** avec `pip`
+- **ffmpeg** (requis par Whisper et yt-dlp)
+- Paquets Python : `openai-whisper`, `yt-dlp`
+
+Installation des dépendances :
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Système (macOS)
+brew install ffmpeg
+
+# Node
+npm install
+
+# Python
+pip install openai-whisper yt-dlp
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copiez ensuite `.env.example` en `.env.local` et ajustez si besoin
+(modèle Whisper par défaut, timeouts, rate limit…).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Démarrer
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+./start.sh
+```
 
-## Learn More
+Ce script :
 
-To learn more about Next.js, take a look at the following resources:
+- tue les éventuels anciens serveurs Next.js,
+- trouve un port libre à partir de 3000,
+- lance Next.js en mode webpack (plus stable que Turbopack sur ce projet),
+- attend que la page soit pré-compilée,
+- ouvre automatiquement le navigateur sur la bonne URL,
+- affiche les logs en direct.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+La première compilation peut prendre 30 s à 2 min ; les suivantes sont
+quasi instantanées grâce au cache.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Arrêter
 
-## Deploy on Vercel
+Dans le terminal qui exécute `./start.sh` : **`Ctrl-C`** suffit (le script
+nettoie les processus enfants).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Si jamais un serveur reste bloqué en arrière-plan :
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pkill -9 -f next
+```
+
+## Tests
+
+```bash
+npm test           # tests unitaires Vitest
+npm run test:e2e   # tests Playwright
+```
+
+## Structure
+
+- `app/page.tsx` — UI principale
+- `app/api/transcribe/route.ts` — endpoint SSE qui orchestre téléchargement + transcription
+- `scripts/download.py` — téléchargement audio via yt-dlp (YouTube/Vimeo uniquement)
+- `scripts/transcribe.py` — transcription Whisper
+- `start.sh` — script de démarrage fiabilisé
